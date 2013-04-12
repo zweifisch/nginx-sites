@@ -10,32 +10,21 @@ pip install nginx-sites
 ## usage
 
 ```sh
-nginx-sites add <name> <python|php>
-nginx-sites add new-app-test python
-
 nginx-sites ls
-
-nginx-sites copy new-app-test new-app
-
-nginx-sites remove new-app-test
-
-nginx-sites edit new-app
+nginx-sites enable <name>
+nginx-sites disable <name>
+nginx-sites new <name> [--path=<path>] [--template=<template>] [(--port=<port>)...]
+nginx-sites rm <name>
+nginx-sites open <name>
+nginx-sites cp <source> <target>
+nginx-sites --version
 ```
 
-## more tmplates
+examples
 
-customized template file can be added to `~/.nginx-sites-tmpls/`,
-once added, can be used as
-```sh
-nginx-sites add <name> <tmpl-name>
+```
+nginx-sites new nodejs.test --template=node --port=3003 --port=3004
+nginx-sites new phpfpm.test --template=php --port=9000
+service nginx reload
 ```
 
-## config
-
-`~/.nginx-sites`
-
-```yaml
-root: var/www/
-confdir: /etc/nginx/conf/sites/
-tmpls: ~/.nginx-sites-tmps/
-```
