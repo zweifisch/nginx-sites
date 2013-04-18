@@ -97,7 +97,7 @@ class NginxSites:
 
 
 def main():
-	args = docopt(__doc__, version='nginx-sites 0.1')
+	args = docopt(__doc__, version='nginx-sites 0.0.5')
 	nginxSites = NginxSites(config)
 	if args['ls']:
 		nginxSites.ls()
