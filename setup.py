@@ -8,10 +8,10 @@ setup(
 	description='cli utility for managing nginx site configs',
 	author='Feng Zhou',
 	author_email='zf.pascal@gmail.com',
-	packages=['nginxSites'],
-	package_data={'nginxSites':['templates/*.conf']},
+	packages=['.'],
+	package_data={'.':['templates/*.conf']},
 	install_requires=['docopt', 'blessings', 'pystache'],
 	entry_points={
-		'console_scripts': ['nginx-sites=nginxSites:main'],
+		'console_scripts': ['nginx-sites=nginx_sites:main'],
 	},
 )
