@@ -37,8 +37,6 @@ from docopt import docopt
 from blessings import Terminal
 from pystache import render
 
-dist = pkg_resources.get_distribution('nginx-sites')
-
 config_path = '~/.nginx-sites.json'
 
 
@@ -160,7 +158,8 @@ def config_interactively():
 	except:
 		nginx_bin = ''
 	ret['nginx_bin'] = get_input('path to nginx executable: ', nginx_bin)
-	ret['templates_path'] = os.path.join(dist.location, 'templates')
+	dist = pkg_resources.get_distribution('nginx_sites')
+	ret['templates_path'] = os.path.join(dist.location, 'nginx_sites', 'templates')
 	return ret
 
 
@@ -173,7 +172,7 @@ def main():
 		config = config_interactively()
 		dump_config(config_path_full, config)
 
-	args = docopt(__doc__, version='nginx-sites 0.0.5')
+	args = docopt(__doc__, version='nginx-sites 0.1.0')
 	sites = NginxSites(config)
 	if args['ls']:
 		sites.ls()

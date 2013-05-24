@@ -1,1 +1,1 @@
-include templates/*.conf
+include nginx_sites/templates/*.conf
