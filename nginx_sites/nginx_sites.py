@@ -4,7 +4,7 @@ Usage:
   nginx-sites ls
   nginx-sites enable <name>
   nginx-sites disable <name>
-  nginx-sites new <name> [--path=<path>] [--template=<template>] [(--port=<port>)...]
+  nginx-sites new <name> [--root=<path>] [--template=<template>] [(--port=<port>)...]
   nginx-sites rm <name>
   nginx-sites open <name>
   nginx-sites cp <source> <target>
@@ -15,8 +15,8 @@ Usage:
 Options:
   -h --help             Show this screen.
   --version             Show version.
-  --template=<template> specify a template [default: php]
-  --path=<path>         specify root default is pwd
+  --template=<template> specify a template [default: php].
+  --root=<path>         specify root default is pwd.
 
 Examples:
     nginx-sites new nodejs.test --template=node --port=3003 --port=3004
@@ -34,8 +34,9 @@ from subprocess import check_output
 import pkg_resources
 import shutil
 from docopt import docopt
-from blessings import Terminal
 from pystache import render
+
+from .colorize import formatter
 
 config_path = '~/.nginx-sites.json'
 
@@ -43,7 +44,6 @@ config_path = '~/.nginx-sites.json'
 class NginxSites:
     def __init__(self, config):
         self.config = config
-        self.term = Terminal()
 
     def enabled_conf(self, name=None):
         if name is None:
@@ -57,9 +57,10 @@ class NginxSites:
 
     def new(self, server_name, root, template, port):
         if port is not None:
-            port = [{'port':p} for p in port]
+            port = [{'port': p} for p in port]
         with open(self.available_conf(server_name), 'w') as fp:
-            template_path = os.path.join(self.config['templates_path'], template + '.conf')
+            template_path = os.path.join(self.config['templates_path'],
+                                         template + '.conf')
             with open(template_path, 'r') as tmpl:
                 fp.write(render(tmpl.read(), locals()))
                 self.enable(server_name)
@@ -74,12 +75,15 @@ class NginxSites:
         _, _, enabled_sites = next(walker)
         walker = os.walk(self.available_conf())
         _, _, available_sites = next(walker)
-        print(self.term.green('enabled sites:'))
-        sys.stdout.writelines(['  %s\n' % site for site in enabled_sites if site in available_sites])
-        print(self.term.yellow('available sites:'))
-        sys.stdout.writelines(['  %s\n' % site for site in available_sites if site not in enabled_sites])
-        print(self.term.red('active sites:'))
-        sys.stdout.writelines(['  %s\n' % site for site in enabled_sites if site not in available_sites])
+        print(formatter('green')('enabled sites:'))
+        sys.stdout.writelines(['  %s\n' % site for site in enabled_sites
+                               if site in available_sites])
+        print(formatter('yellow')('available sites:'))
+        sys.stdout.writelines(['  %s\n' % site for site in available_sites
+                               if site not in enabled_sites])
+        print(formatter('red')('active sites:'))
+        sys.stdout.writelines(['  %s\n' % site for site in enabled_sites
+                               if site not in available_sites])
 
     def enable(self, name):
         if os.path.exists(self.enabled_conf(name)):
@@ -92,7 +96,8 @@ class NginxSites:
 
     def cp(self, source, target):
         if os.path.exists(self.available_conf(source)):
-            shutil.copy2(self.available_conf(source), self.available_conf(target))
+            shutil.copy2(self.available_conf(source),
+                         self.available_conf(target))
             self.open(target)
         else:
             print("%s not exists" % self.available_conf(source))
@@ -141,6 +146,7 @@ def dump_config(path, config):
     with open(path, 'w') as fp:
         json.dump(config, fp, indent=True)
 
+
 def get_input(prompt, prefill=''):
     readline.set_startup_hook(lambda: readline.insert_text(prefill))
     try:
@@ -148,18 +154,21 @@ def get_input(prompt, prefill=''):
     finally:
         readline.set_startup_hook()
 
+
 def config_interactively():
     ret = {}
-    ret['sites_enabled'] = get_input('path to sites-enabled: ', '/etc/nginx/sites-enabled')
+    ret['sites_enabled'] = get_input('path to sites-enabled: ',
+                                     '/etc/nginx/sites-enabled')
     ret['sites_available'] = get_input('path to sites-available: ',
-            ret['sites_enabled'].replace('enabled','available'))
+                                       ret['sites_enabled'].replace('enabled', 'available'))
     try:
-        nginx_bin = check_output(['which','nginx']).strip()
+        nginx_bin = check_output(['which', 'nginx']).strip()
     except:
         nginx_bin = ''
     ret['nginx_bin'] = get_input('path to nginx executable: ', nginx_bin)
     dist = pkg_resources.get_distribution('nginx_sites')
-    ret['templates_path'] = os.path.join(dist.location, 'nginx_sites', 'templates')
+    ret['templates_path'] = os.path.join(dist.location,
+                                         'nginx_sites', 'templates')
     return ret
 
 
@@ -174,32 +183,35 @@ def main():
 
     args = docopt(__doc__, version='nginx-sites 0.1.0')
     sites = NginxSites(config)
-    if args['ls']:
-        sites.ls()
-    elif args['enable']:
-        sites.enable(args['<name>'])
-    elif args['disable']:
-        sites.disable(args['<name>'])
-    elif args['new']:
-        root = os.getcwd() if args['--path'] is None else args['--path']
-        template = args['--template']
-        sites.new(args['<name>'], root, template, args['--port'])
-    elif args['rm']:
-        sites.rm(args['<name>'])
-    elif args['cp']:
-        sites.cp(args['<source>'], args['<target>'])
-    elif args['open']:
-        sites.open(args['<name>'])
-    elif args['config']:
-        if args['-e']:
-            editconf(config_path_full)
-        elif args['-i']:
-            config = config_interactively()
-            dump_config(config_path_full, config)
-        else:
-            print(json.dumps(load_config(config_path_full), indent=2))
-    elif args['reload']:
-        sites.reload()
+    try:
+        if args['ls']:
+            sites.ls()
+        elif args['enable']:
+            sites.enable(args['<name>'])
+        elif args['disable']:
+            sites.disable(args['<name>'])
+        elif args['new']:
+            root = os.getcwd() if args['--root'] is None else args['--root']
+            template = args['--template'] or 'php'  # TODO docstring parsed incorrectly
+            sites.new(args['<name>'], root, template, args['--port'])
+        elif args['rm']:
+            sites.rm(args['<name>'])
+        elif args['cp']:
+            sites.cp(args['<source>'], args['<target>'])
+        elif args['open']:
+            sites.open(args['<name>'])
+        elif args['config']:
+            if args['-e']:
+                editconf(config_path_full)
+            elif args['-i']:
+                config = config_interactively()
+                dump_config(config_path_full, config)
+            else:
+                print(json.dumps(load_config(config_path_full), indent=2))
+        elif args['reload']:
+            sites.reload()
+    except OSError, e:
+        print(e)
 
 if __name__ == '__main__':
     main()
