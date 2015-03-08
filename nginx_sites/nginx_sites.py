@@ -9,16 +9,19 @@ Usage:
   nginx-sites open <name>
   nginx-sites cp <source> <target>
   nginx-sites reload
-  nginx-sites config [-e] [-i]
+  nginx-sites config [-e]
+  nginx-sites reconfig
   nginx-sites --version
+  nginx-sites -h
 
 Options:
-  -h --help             Show this screen.
-  --version             Show version.
-  --template=<template> specify a template [default: php].
-  --root=<path>         specify root default is pwd.
+  -h --help              Show this screen.
+  --version              Show version.
+  --template=<template>  specify a template [default: static].
+  --root=<path>          specify root default is pwd.
 
 Examples:
+    nginx-sites new static.test --root /var/www/static
     nginx-sites new nodejs.test --template=node --port=3003 --port=3004
     nginx-sites new phpfpm.test --template=php --port=9000
 """
@@ -159,8 +162,9 @@ def config_interactively():
     ret = {}
     ret['sites_enabled'] = get_input('path to sites-enabled: ',
                                      '/etc/nginx/sites-enabled')
-    ret['sites_available'] = get_input('path to sites-available: ',
-                                       ret['sites_enabled'].replace('enabled', 'available'))
+    ret['sites_available'] = get_input(
+        'path to sites-available: ',
+        ret['sites_enabled'].replace('enabled', 'available'))
     try:
         nginx_bin = check_output(['which', 'nginx']).strip()
     except:
@@ -181,7 +185,7 @@ def main():
         config = config_interactively()
         dump_config(config_path_full, config)
 
-    args = docopt(__doc__, version='nginx-sites 0.1.0')
+    args = docopt(__doc__, version='nginx-sites 0.1.2')
     sites = NginxSites(config)
     try:
         if args['ls']:
@@ -191,9 +195,8 @@ def main():
         elif args['disable']:
             sites.disable(args['<name>'])
         elif args['new']:
-            root = os.getcwd() if args['--root'] is None else args['--root']
-            template = args['--template'] or 'php'  # TODO docstring parsed incorrectly
-            sites.new(args['<name>'], root, template, args['--port'])
+            root = args['--root'] or os.getcwd()
+            sites.new(args['<name>'], root, args['--template'], args['--port'])
         elif args['rm']:
             sites.rm(args['<name>'])
         elif args['cp']:
@@ -203,11 +206,11 @@ def main():
         elif args['config']:
             if args['-e']:
                 editconf(config_path_full)
-            elif args['-i']:
-                config = config_interactively()
-                dump_config(config_path_full, config)
             else:
                 print(json.dumps(load_config(config_path_full), indent=2))
+        elif args['reconfig']:
+            config = config_interactively()
+            dump_config(config_path_full, config)
         elif args['reload']:
             sites.reload()
     except OSError, e:

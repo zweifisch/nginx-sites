@@ -1,10 +1,9 @@
-# from distutils.core import setup
 from setuptools import setup
 
 setup(
     name='nginx-sites',
     url='https://github.com/zweifisch/nginx-sites',
-    version='0.1.1',
+    version='0.1.2',
     description='cli utility for managing nginx site configs',
     author='Feng Zhou',
     author_email='zf.pascal@gmail.com',
