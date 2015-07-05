@@ -28,3 +28,26 @@ nginx-sites new phpfpm.test --template=php --port=9000
 service nginx reload
 ```
 
+## adding new vhost templates
+
+Copy the directory `/usr/local/lib/python2.7/dist-packages/nginx_sites/templates` to `~/.nginx-sites-templates` 
+
+Edit the configuration file `~/.nginx-sites.json` and set it according to the settings below:
+
+```json
+{
+    "templates_path": "/home/username/.nginx-sites-templates", 
+    "sites_available": "/etc/nginx/sites-available", 
+    "nginx_bin": "/usr/sbin/nginx", 
+    "sites_enabled": "/etc/nginx/sites-enabled"
+}
+```
+
+Create your templates in `~/.nginx-sites-templates`
+
+After setting up your new template, it is available for use with the command:
+
+```sh
+nginx-sites new myapp.dev --template=mytemplate
+service nginx reload
+```
