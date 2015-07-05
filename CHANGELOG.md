@@ -1,3 +1,7 @@
+## 0.1.3
+
+* add template for laravel by @joaosalless
+
 ## 0.1.2
 
 * add `static` template
