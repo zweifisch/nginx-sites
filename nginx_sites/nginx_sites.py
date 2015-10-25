@@ -11,6 +11,8 @@ Usage:
   nginx-sites reload
   nginx-sites config [-e]
   nginx-sites reconfig
+  nginx-sites templates
+  nginx-sites templates-show <name>
   nginx-sites --version
   nginx-sites -h
 
@@ -112,6 +114,23 @@ class NginxSites:
     def reload(self):
         call([self.config['nginx_bin'], '-s', 'reload'])
 
+    def templates_list(self):
+        walker = os.walk(self.config['templates_path'])
+        _, _, templates = next(walker)
+        sys.stdout.writelines(['%s\n' % t.replace(".conf", '')
+                               for t in templates])
+
+    def templates_show(self, name):
+        template_path = os.path.join(self.config['templates_path'],
+                                     name + '.conf')
+        if os.path.exists(template_path):
+            with open(template_path, 'r') as tmpl:
+                sys.stdout.write(tmpl.read())
+        else:
+            print(formatter('red')("template %s not found in %s"
+                                   % (name, template_path)))
+            os.exit(1)
+
 
 def editconf(path):
     editor = os.environ.get('EDITOR', 'vi')
@@ -176,7 +195,7 @@ def config_interactively():
     return ret
 
 
-def main():
+def run():
     config_path_full = os.path.expanduser(config_path)
     config = load_config(config_path_full)
 
@@ -185,36 +204,49 @@ def main():
         config = config_interactively()
         dump_config(config_path_full, config)
 
-    args = docopt(__doc__, version='nginx-sites 0.1.2')
+    args = docopt(__doc__, version='nginx-sites 0.1.4')
     sites = NginxSites(config)
+    if args['ls']:
+        sites.ls()
+    elif args['enable']:
+        sites.enable(args['<name>'])
+    elif args['disable']:
+        sites.disable(args['<name>'])
+    elif args['new']:
+        root = args['--root'] or os.getcwd()
+        sites.new(args['<name>'], root, args['--template'], args['--port'])
+    elif args['rm']:
+        sites.rm(args['<name>'])
+    elif args['cp']:
+        sites.cp(args['<source>'], args['<target>'])
+    elif args['open']:
+        sites.open(args['<name>'])
+    elif args['config']:
+        if args['-e']:
+            editconf(config_path_full)
+        else:
+            print(json.dumps(load_config(config_path_full), indent=2))
+    elif args['reconfig']:
+        config = config_interactively()
+        dump_config(config_path_full, config)
+    elif args['reload']:
+        sites.reload()
+    elif args['templates']:
+        sites.templates_list()
+    elif args['templates-show']:
+        sites.templates_show(args['<name>'])
+
+
+def main():
     try:
-        if args['ls']:
-            sites.ls()
-        elif args['enable']:
-            sites.enable(args['<name>'])
-        elif args['disable']:
-            sites.disable(args['<name>'])
-        elif args['new']:
-            root = args['--root'] or os.getcwd()
-            sites.new(args['<name>'], root, args['--template'], args['--port'])
-        elif args['rm']:
-            sites.rm(args['<name>'])
-        elif args['cp']:
-            sites.cp(args['<source>'], args['<target>'])
-        elif args['open']:
-            sites.open(args['<name>'])
-        elif args['config']:
-            if args['-e']:
-                editconf(config_path_full)
-            else:
-                print(json.dumps(load_config(config_path_full), indent=2))
-        elif args['reconfig']:
-            config = config_interactively()
-            dump_config(config_path_full, config)
-        elif args['reload']:
-            sites.reload()
-    except OSError, e:
-        print(e)
+        run()
+    except (IOError, OSError) as err:
+        if err.errno is 13:
+            os.execvp("sudo", ["sudo"] + sys.argv)
+        else:
+            print(err.strerror)
+            os.exit(1)
+
 
 if __name__ == '__main__':
     main()

@@ -1,3 +1,8 @@
+## 0.1.4
+
+* auto sudo on permission denied
+* add `templates`, `templates-show`
+
 ## 0.1.3
 
 * add template for laravel by @joaosalless
