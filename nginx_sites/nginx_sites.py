@@ -1,20 +1,20 @@
 """nginx sites
 
 Usage:
-  nginx-sites ls
-  nginx-sites enable <name>
-  nginx-sites disable <name>
-  nginx-sites new <name> [--root=<path>] [--template=<template>] [(--port=<port>)...]
-  nginx-sites rm <name>
-  nginx-sites open <name>
-  nginx-sites cp <source> <target>
-  nginx-sites reload
-  nginx-sites config [-e]
-  nginx-sites reconfig
-  nginx-sites templates
-  nginx-sites templates-show <name>
-  nginx-sites --version
-  nginx-sites -h
+  ngx ls
+  ngx enable <name>
+  ngx disable <name>
+  ngx new <name> [--root=<path>] [--template=<template>] [(--port=<port>)...]
+  ngx rm <name>
+  ngx open <name>
+  ngx cp <source> <target>
+  ngx reload
+  ngx config [-e]
+  ngx reconfig
+  ngx templates
+  ngx templates-show <name>
+  ngx --version
+  ngx -h
 
 Options:
   -h --help              Show this screen.
@@ -23,9 +23,9 @@ Options:
   --root=<path>          specify root default is pwd.
 
 Examples:
-    nginx-sites new static.test --root /var/www/static
-    nginx-sites new nodejs.test --template=node --port=3003 --port=3004
-    nginx-sites new phpfpm.test --template=php --port=9000
+    ngx new static.test --root /var/www/static
+    ngx new nodejs.test --template=node --port=3003 --port=3004
+    ngx new phpfpm.test --template=php --port=9000
 """
 
 import os
@@ -112,7 +112,7 @@ class NginxSites:
         call([editor, self.available_conf(name)])
 
     def reload(self):
-        call([self.config['nginx_bin'], '-s', 'reload'])
+        call(["sudo", self.config['nginx_bin'], '-s', 'reload'])
 
     def templates_list(self):
         walker = os.walk(self.config['templates_path'])
@@ -129,7 +129,7 @@ class NginxSites:
         else:
             print(formatter('red')("template %s not found in %s"
                                    % (name, template_path)))
-            os.exit(1)
+            sys.exit(1)
 
 
 def editconf(path):
@@ -204,7 +204,7 @@ def run():
         config = config_interactively()
         dump_config(config_path_full, config)
 
-    args = docopt(__doc__, version='nginx-sites 0.1.4')
+    args = docopt(__doc__, version='nginx-sites 0.1.5')
     sites = NginxSites(config)
     if args['ls']:
         sites.ls()
@@ -245,7 +245,7 @@ def main():
             os.execvp("sudo", ["sudo"] + sys.argv)
         else:
             print(err.strerror)
-            os.exit(1)
+            sys.exit(1)
 
 
 if __name__ == '__main__':
