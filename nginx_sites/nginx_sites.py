@@ -204,7 +204,7 @@ def run():
         config = config_interactively()
         dump_config(config_path_full, config)
 
-    args = docopt(__doc__, version='nginx-sites 0.1.5')
+    args = docopt(__doc__, version='nginx-sites 0.1.6')
     sites = NginxSites(config)
     if args['ls']:
         sites.ls()
